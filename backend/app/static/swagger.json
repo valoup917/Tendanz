@@ -1,0 +1,659 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Tendanz API",
+        "version": "1.0.0"
+    },
+    "tags": [
+        {
+            "name": "Setup",
+            "description": "Setup utility endpoints like health check and database setup"
+        },
+        {
+            "name": "Auth",
+            "description": "Endpoints related to authentication"
+        },
+        {
+            "name": "Users",
+            "description": "Endpoints related to user management"
+        },
+        {
+            "name": "Contracts",
+            "description": "Endpoints related to contract management"
+        }
+    ],
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+        }
+    },
+    "paths": {
+        "/load_db": {
+            "post": {
+                "tags": [
+                    "Setup"
+                ],
+                "summary": "Setup the database",
+                "description": "Create all tables in the database",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tables created successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "Tables created"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "No database URL found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "No database URL found"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "Setup"
+                ],
+                "summary": "Health check",
+                "description": "Health check for the application",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Health check successful",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "ok"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "description": "Register a new user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "user data",
+                        "in": "body",
+                        "description": "JSON data for the new user",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RegisterUserData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "access_token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing data"
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login a user",
+                "description": "Authenticate a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "login data",
+                        "in": "body",
+                        "description": "JSON data for user login",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginUserData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "access_token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing data"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid email or password"
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "description": "ID of the user to retrieve"
+                    }
+                ],
+                "summary": "Get all users or only one",
+                "description": "Retrieve a list of all users in the system or the user associated with the user id.",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User(s) detail",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/User"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update a user",
+                "description": "Update the details of a specific user. Requires authentication.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the user to update"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "description": "JSON object containing the fields to update",
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdate"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User updated successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete a user",
+                "description": "Delete a user and all their associated contracts. Requires authentication.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the user to delete"
+                    }
+                ],
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                }
+            }
+        },
+        "/contracts": {
+            "post": {
+                "tags": [
+                    "Contracts"
+                ],
+                "summary": "Create a new contract",
+                "description": "Create a new contract for a user. Requires authentication.",
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "description": "Contract details",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "insurance_type": {
+                                    "type": "string",
+                                    "description": "Type of insurance (health, auto, home)"
+                                },
+                                "start_date": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "description": "Start date of the contract"
+                                },
+                                "end_date": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "description": "End date of the contract"
+                                }
+                            },
+                            "required": [
+                                "insurance_type",
+                                "start_date",
+                                "end_date"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Contract created successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or missing fields"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "Contracts"
+                ],
+                "summary": "Get contracts",
+                "description": "Retrieve contracts based on query parameters.",
+                "parameters": [
+                    {
+                        "name": "owner_id",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "description": "Owner ID to filter contracts"
+                    },
+                    {
+                        "name": "contract_id",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "description": "Specific contract ID to retrieve"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of contracts or single contract details",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer"
+                                    },
+                                    "insurance_type": {
+                                        "type": "string"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "annual_premium": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "owner_id": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Contracts"
+                ],
+                "summary": "Update a contract",
+                "description": "Update the details of a specific contract. Requires authentication.",
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the contract to update"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "description": "Fields to update",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "insurance_type": {
+                                    "type": "string"
+                                },
+                                "start_date": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "end_date": {
+                                    "type": "string",
+                                    "format": "date"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contract updated successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or missing ID"
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Contracts"
+                ],
+                "summary": "Delete a contract",
+                "description": "Delete a specific contract. Requires authentication.",
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the contract to delete"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contract deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or missing ID"
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "RegisterUserData": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "firstname": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "birthdate": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "password": {
+                    "type": "string",
+                    "format": "password"
+                }
+            },
+            "required": [
+                "name",
+                "firstname",
+                "email",
+                "birthdate",
+                "password"
+            ]
+        },
+        "LoginUserData": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "password": {
+                    "type": "string",
+                    "format": "password"
+                }
+            },
+            "required": [
+                "email",
+                "password"
+            ]
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Unique ID of the user"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the user"
+                },
+                "firstname": {
+                    "type": "string",
+                    "description": "First name of the user"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email of the user"
+                },
+                "birthdate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Birthdate of the user"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Creation timestamp"
+                }
+            }
+        },
+        "UserUpdate": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Updated name of the user"
+                },
+                "firstname": {
+                    "type": "string",
+                    "description": "Updated first name of the user"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Updated email of the user"
+                },
+                "birthdate": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Updated birthdate of the user"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Updated password of the user"
+                }
+            }
+        }
+    }
+}

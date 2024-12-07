@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+python-dotenv
+psycopg2-binary
+flask-jwt-extended
+passlib
+flask_swagger_ui
+flask-cors
