@@ -43,6 +43,10 @@ b. Accédez aux services :
 
 Swagger UI : http://localhost:5100/swagger
 
+c. Lancer la création des tables de db:
+
+http://localhost:5100/swagger/#/Setup/post_load_db
+
 
 ### 4. Démarrer le frontend 
 ## Étapes :
