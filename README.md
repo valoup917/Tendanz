@@ -42,3 +42,20 @@ docker compose up --build -d
 b. Accédez aux services :
 
 Swagger UI : http://localhost:5100/swagger
+
+
+### 4. Démarrer le frontend 
+## Étapes :
+a. Accédez au répertoire du frontend :
+b. Installez les dépendances :
+c. Lancez le serveur de développement :
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+d. Accédez au frontend :
+
+L'interface utilisateur est disponible sur http://localhost:3000
