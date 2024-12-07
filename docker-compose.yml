@@ -9,16 +9,16 @@ services:
     depends_on:
       - tendanz_db
     
-  frontend_service:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      - backend_service
+  # frontend_service:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - NODE_ENV=production
+  #   depends_on:
+  #     - backend_service
 
   tendanz_db:
     image: postgres
