@@ -29,31 +29,3 @@ export const getAllUsersRequest = async (): Promise<any> => {
         return response.data;
     } catch (error: any) { throw formatErrorResponse(error) }
 }
-
-export const getContractsFromUsersRequest = async (userId: number): Promise<any> => {
-    try {
-        const response = await api.get(
-            URL + `/contracts?owner_id=${userId}`
-        );
-        return response.data;
-    } catch (error: any) { throw formatErrorResponse(error) }
-}
-
-export const postContractForUserRequest = async (payload: any): Promise<any> => {
-    try {
-        const response = await api.post(
-            URL + `/contracts`,
-            payload
-        );
-        return response.data;
-    } catch (error: any) { throw formatErrorResponse(error) }
-}
-
-export const deleteContractRequest = async (contractId: number): Promise<any> => {
-    try {
-        const response = await api.delete(
-            URL + `/contracts?id=${contractId}`
-        );
-        return response.data;
-    } catch (error: any) { throw formatErrorResponse(error) }
-}

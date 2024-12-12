@@ -1,4 +1,5 @@
 "use client"
+
 import React, { useState } from "react";
 
 import { motion } from "framer-motion";
@@ -24,7 +25,6 @@ export default function Login() {
     async function Login() {
         try {
             const jwt = await userLoginRequest({ email: email, password: password } as LoginRequestModel);
-            console.log(jwt)
             setCookie("jwt", jwt);
             router.push(`/dashboard`);
         } catch (e : any) {

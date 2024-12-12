@@ -1,11 +1,12 @@
 "use client"
-
+import { parseDate } from "@internationalized/date";
 import React, { useCallback, useEffect, useState } from 'react';
 import { Select, SelectItem } from "@nextui-org/select";
-import { deleteContractRequest, getAllUsersRequest, getContractsFromUsersRequest, postContractForUserRequest } from '@/services/usersRequests';
+import { getAllUsersRequest } from '@/services/usersRequests';
+import { deleteContractRequest, getContractsFromUsersRequest, postContractForUserRequest, updateContractForUserRequest } from '@/services/contractsRequests';
 import type { Selection } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/modal";
-import { DateInput } from '@nextui-org/react';
+import { checkboxGroup, DateInput } from '@nextui-org/react';
 import { now } from "@internationalized/date";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@nextui-org/react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, getKeyValue, Tooltip } from "@nextui-org/react";
@@ -13,9 +14,9 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, getKey
 export default function Dashboard() {
 
     const [addContractModal, setAddContractModal] = useState<Boolean>(false);
+    const [editContractModal, setEditContractModal] = useState<null | number>(null);
 
     const [selecteUserFilter, setSelecteUserFilter] = useState<Selection>(new Set([]));
-    const [userIdSelected, setUserIdSelected] = useState<number | null>(null);
     const [users, setUsers] = useState<any[]>([]);
     const [startDate, setStartDate] = useState<any>(now("Europe/Brussels"));
     const [endDate, setEndDate] = useState<any>(now("Europe/Brussels"));
@@ -59,17 +60,33 @@ export default function Dashboard() {
         getUsers();
     }, []);
 
+    async function updateContract() {
+        try {
+            const startDateData = `${startDate.year}-${startDate.month}-${startDate.day}`
+            const endDateData = `${endDate.year}-${endDate.month}-${endDate.day}`
+            await updateContractForUserRequest({
+                insurance_type: selectedValue,
+                start_date: startDateData,
+                end_date: endDateData
+            }, editContractModal as number);
+            setEditContractModal(null);
+            await fetchContracts(selecteUserFilter.currentKey);
+        } catch (e: any) {
+            console.log(e)
+        }
+    }
+
     async function createContract() {
         try {
             const startDateData = `${startDate.year}-${startDate.month}-${startDate.day}`
             const endDateData = `${endDate.year}-${endDate.month}-${endDate.day}`
-            const result = await postContractForUserRequest({
+            await postContractForUserRequest({
                 insurance_type: selectedValue,
                 start_date: startDateData,
                 end_date: endDateData
             });
             setAddContractModal(false);
-            //window.location.reload();
+            await fetchContracts(selecteUserFilter.currentKey);
         } catch (e: any) {
             console.log(e)
         }
@@ -88,11 +105,44 @@ export default function Dashboard() {
         }
     }
 
+    const handleEditClick = (item : any) => {
+        setEditContractModal(item.id);
+
+        setStartDate(parseDate(new Date(item.start_date).toISOString().split('T')[0]));
+        setEndDate(parseDate(new Date(item.end_date).toISOString().split('T')[0]));
+
+        setSelectedKeys(item.insurance_type);
+    };
+
     const createcContractInputs = [
         <Dropdown>
             <DropdownTrigger>
                 <Button className="capitalize" variant="bordered">
                 {selectedValue}
+                </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={selectedKeys}
+                selectionMode="single"
+                variant="flat"
+                onSelectionChange={setSelectedKeys}
+            >
+                <DropdownItem key="HEALTH">Health</DropdownItem>
+                <DropdownItem key="AUTO">Auto</DropdownItem>
+                <DropdownItem key="HOME">Home</DropdownItem>
+            </DropdownMenu>
+        </Dropdown>,
+        <DateInput granularity="day" key="start_date" label="Start Date" variant="bordered" value={startDate} onChange={setStartDate} />,
+        <DateInput granularity="day" key="end_date" label="End Date" variant="bordered" value={endDate} onChange={setEndDate} />,
+    ] as React.JSX.Element[]
+
+    const editContractInputs = [
+        <Dropdown>
+            <DropdownTrigger>
+                <Button className="capitalize" variant="bordered">
+                    {selectedValue}
                 </Button>
             </DropdownTrigger>
             <DropdownMenu
@@ -128,7 +178,7 @@ export default function Dashboard() {
                 return (
                     <div className="relative flex items-center gap-4">
                         <Tooltip content="Edit">
-                            <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                            <span className="text-lg text-default-400 cursor-pointer active:opacity-50" onClick={() => { handleEditClick(item) }}>
                                 <svg aria-hidden="true" fill="none" focusable="false" height="1em" role="presentation" viewBox="0 0 20 20" width="1em">
                                     <path d="M11.05 3.00002L4.20835 10.2417C3.95002 10.5167 3.70002 11.0584 3.65002 11.4334L3.34169 14.1334C3.23335 15.1084 3.93335 15.775 4.90002 15.6084L7.58335 15.15C7.95835 15.0834 8.48335 14.8084 8.74168 14.525L15.5834 7.28335C16.7667 6.03335 17.3 4.60835 15.4583 2.86668C13.625 1.14168 12.2334 1.75002 11.05 3.00002Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit={10} strokeWidth={1.5} />
                                     <path d="M9.90833 4.20831C10.2667 6.50831 12.1333 8.26665 14.45 8.49998" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit={10} strokeWidth={1.5} />
@@ -179,7 +229,7 @@ export default function Dashboard() {
                     ))}
                 </Select>
             </div>
-            <div className='mt-20 flex'>
+            <div className='mt-20 flex flex-col space-y-10 w-full'>
                 {
                     addContractModal &&
                     <Modal
@@ -215,34 +265,70 @@ export default function Dashboard() {
                     </Modal>
                 }
                 {
-                    contracts?.length == 0 &&
-                    <div className='w-full h-full flex flex-col space-y-8'>
-                        <div className='w-full h-full flex justify-center items-center'>
-                            <button className='bg-green-500/50 h-12 w-64 rounded-xl' onClick={() => setAddContractModal(true)}>
-                                Add a contract
-                            </button>
-                        </div>
-                        <div className="text-center text-xl text-red-500 font-semibold">
-                            No contracts found
-                        </div>
+                    editContractModal &&
+                    <Modal
+                        isOpen={true}
+                        placement="top-center"
+                    >
+                        <ModalContent>
+                            {() => (
+                                <>
+                                    <ModalHeader className="flex flex-col gap-1">
+                                        Edit contract
+                                    </ModalHeader>
+                                    <ModalBody>
+                                        {editContractInputs.map((input) => (
+                                            <div key={input.key} className='justify-center flex'>
+                                                {input}
+                                            </div>
+                                        ))}
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <div className='flex w-full justify-between mt-2'>
+                                            <button onClick={() => { setEditContractModal(null); }} className='bg-gray-500/80  rounded-lg p-2'>
+                                                Back
+                                            </button>
+                                            <button onClick={async () => (await updateContract())} className='bg-green-700 rounded-lg p-2'>
+                                                Edit Contract
+                                            </button>
+                                        </div>
+                                    </ModalFooter>
+                                </>
+                            )}
+                        </ModalContent>
+                    </Modal>
+                }
 
+                <div className='w-full h-full flex flex-col space-y-8'>
+                    <div className='w-full h-full flex justify-center items-center'>
+                        <button className='bg-green-500/50 h-12 w-64 rounded-xl' onClick={() => setAddContractModal(true)}>
+                            Add a contract
+                        </button>
+                    </div>
+                </div>
+                {
+                    contracts && contracts.length == 0 &&
+                    <div className="text-center text-xl text-red-500 font-semibold">
+                        No contracts found
                     </div>
                 }
                 {
                     contracts && contracts.length > 0 &&
 
-                    <Table aria-label="Table displaying data" className='mx-20 text-black'>
-                        <TableHeader columns={columns}>
-                            {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
-                        </TableHeader>
-                        <TableBody items={contracts} emptyContent={"No rows to display."}>
-                            {(item) => (
-                                <TableRow key={item.id}>
-                                    {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                    <div className="flex items-center justify-center">
+                        <Table aria-label="Table displaying data" className='w-10/12 mx-4'>
+                            <TableHeader columns={columns}>
+                                {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
+                            </TableHeader>
+                            <TableBody items={contracts} emptyContent={"No rows to display."}>
+                                {(item) => (
+                                    <TableRow key={item.id}>
+                                        {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 }
                 {
                     contracts == null &&

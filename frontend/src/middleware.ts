@@ -40,15 +40,10 @@ export function middleware(request: NextRequest) {
             const allowedRoutes = roleRoutes[userRole].concat(roleRoutes["basics"]) || roleRoutes["basics"];
             const route = pathname.replace('/', '');
 
-            console.log(route)
 
             const routeOfUser = route.split('/')[0];
-            console.log(routeOfUser)
 
             if (!allowedRoutes.includes(routeOfUser)) {
-                console.log("forbidden", routeOfUser);
-                console.log(allowedRoutes);
-                console.log(request.url);
                 return NextResponse.redirect(new URL(`/forbidden`, request.url)); // Rediriger vers une page d'erreur si l'accès est refusé
             }
 
@@ -62,7 +57,6 @@ export function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL(`/login`, request.url));
         }
     }
-    console.log("pas de jwt")
     if (pathname === '/login' || pathname === '/register') {
         return NextResponse.next();
     }
